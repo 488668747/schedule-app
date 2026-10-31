@@ -1,0 +1,25 @@
+{
+  "name": "xu-qiu-pai-qi-app",
+  "version": "0.1.0",
+  "description": "跨平台个人需求排期桌面应用",
+  "main": "src/electron.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron src/electron.cjs --dev\"",
+    "web": "vite",
+    "build": "vite build",
+    "desktop": "npm run build && electron src/electron.cjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "electron": "33.4.11",
+    "react": "latest",
+    "react-dom": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "concurrently": "8.2.2",
+    "wait-on": "7.2.0"
+  }
+}
