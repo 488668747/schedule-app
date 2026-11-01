@@ -1,6 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createBackup, parseBackup, saveImportedBackup, TASKS_KEY, PROJECTS_KEY } from './backup.js'
+import { createBackup, parseBackup } from './backup.js'
+import { indexedDB } from 'fake-indexeddb'
+import { createScheduleStorage } from './storage.js'
 
 const projects = [{ id: 'p1', name: '迁移项目', short: '迁', color: '#5578e7' }]
 const tasks = [{ id: 't1', projectId: 'p1', title: '跨设备需求', start: '2026-11-01', end: '2026-11-05', status: 'done', priority: 'high', note: '保留中文备注与已完成状态' }]
@@ -9,7 +11,7 @@ test('导出的备份可完整还原项目、日期、备注和已完成需求',
   const restored = parseBackup(createBackup(projects, tasks))
   assert.deepEqual(restored.projects, projects)
   assert.deepEqual(restored.tasks, tasks)
-  assert.equal(restored.version, 1)
+  assert.equal(restored.version, 2)
   assert.ok(Number.isFinite(Date.parse(restored.exportedAt)))
 })
 
@@ -25,7 +27,7 @@ test('拒绝损坏的 JSON、其他文件和不兼容版本', () => {
     assert.throws(() => parseBackup(JSON.stringify(value)), /不是/)
   }
   const backup = JSON.parse(createBackup(projects, tasks))
-  assert.throws(() => parseBackup(JSON.stringify({ ...backup, version: 2 })), /版本/)
+  assert.throws(() => parseBackup(JSON.stringify({ ...backup, version: 3 })), /版本/)
   assert.throws(() => parseBackup(JSON.stringify({ ...backup, tasks: null })), /缺少/)
 })
 
@@ -54,38 +56,19 @@ test('导入时丢弃未知字段，保留应用可用的数据', () => {
   assert.deepEqual(result.tasks, tasks)
 })
 
-function memoryStorage(entries = []) {
-  const data = new Map(entries)
-  return { getItem: (key) => data.get(key) ?? null, setItem: (key, value) => data.set(key, value), removeItem: (key) => data.delete(key) }
-}
-
-test('导入覆盖后可重新读取完整项目和需求', () => {
-  const storage = memoryStorage([[PROJECTS_KEY, 'old-projects'], [TASKS_KEY, 'old-tasks']])
-  saveImportedBackup(storage, parseBackup(createBackup(projects, tasks)))
-  assert.deepEqual(JSON.parse(storage.getItem(PROJECTS_KEY)), projects)
-  assert.deepEqual(JSON.parse(storage.getItem(TASKS_KEY)), tasks)
-})
-
-test('写入需求失败时撤销项目写入，保留两份原数据', () => {
-  const storage = memoryStorage([[PROJECTS_KEY, 'old-projects'], [TASKS_KEY, 'old-tasks']])
-  const setItem = storage.setItem
-  storage.setItem = (key, value) => {
-    if (key === TASKS_KEY) throw new Error('QuotaExceededError')
-    setItem(key, value)
-  }
-  assert.throws(() => saveImportedBackup(storage, { projects, tasks }), /当前数据已保留/)
-  assert.equal(storage.getItem(PROJECTS_KEY), 'old-projects')
-  assert.equal(storage.getItem(TASKS_KEY), 'old-tasks')
-})
-
-test('首次导入失败时清理已写入的项目，避免留下半份数据', () => {
-  const storage = memoryStorage()
-  const setItem = storage.setItem
-  storage.setItem = (key, value) => {
-    if (key === TASKS_KEY) throw new Error('QuotaExceededError')
-    setItem(key, value)
-  }
-  assert.throws(() => saveImportedBackup(storage, { projects, tasks }), /保存失败/)
-  assert.equal(storage.getItem(PROJECTS_KEY), null)
-  assert.equal(storage.getItem(TASKS_KEY), null)
+test('首次打开会把旧版本地数据迁移到 IndexedDB，重新打开仍能读到图文字段', async () => {
+  const legacyStorage = new Map([
+    ['rhythm-schedule-projects-v1', JSON.stringify(projects)],
+    ['rhythm-schedule-tasks-v1', JSON.stringify([{ ...tasks[0], noteDoc: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '图文描述' }] }] } }])]
+  ])
+  const legacy = { getItem: key => legacyStorage.get(key) ?? null, setItem: (key, value) => legacyStorage.set(key, value) }
+  const databaseName = `rhythm-test-${Date.now()}-${Math.random()}`
+  const first = createScheduleStorage({ indexedDB, legacyStorage: legacy, databaseName })
+  const restored = await first.load()
+  assert.equal(restored.projects[0].name, projects[0].name)
+  assert.equal(restored.tasks[0].noteDoc.content[0].content[0].text, '图文描述')
+  await first.save({ projects: restored.projects, tasks: [...restored.tasks, { ...tasks[0], id: 't2' }] })
+  const reopened = await createScheduleStorage({ indexedDB, legacyStorage: { getItem: () => null }, databaseName }).load()
+  assert.equal(reopened.tasks.length, 2)
+  assert.equal(reopened.tasks[0].noteDoc.content[0].content[0].text, '图文描述')
 })

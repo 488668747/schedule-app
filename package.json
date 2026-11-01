@@ -13,6 +13,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tiptap/extension-image": "^3.32.2",
+    "@tiptap/react": "^3.32.2",
+    "@tiptap/starter-kit": "^3.32.2",
     "@vitejs/plugin-react": "latest",
     "electron": "33.4.11",
     "react": "latest",
@@ -21,6 +24,7 @@
   },
   "devDependencies": {
     "concurrently": "8.2.2",
+    "fake-indexeddb": "^6.2.7",
     "wait-on": "7.2.0"
   }
 }
