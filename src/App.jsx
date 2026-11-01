@@ -6,11 +6,13 @@ import Timeline from './components/Timeline'
 import TaskModal from './components/TaskModal'
 import ProjectModal from './components/ProjectModal'
 import ConfirmDialog from './components/ConfirmDialog'
+import BackupModal from './components/BackupModal'
+import { PROJECTS_KEY, TASKS_KEY, saveImportedBackup } from './utils/backup'
 import { getPriority, getProject, getStatus, PROJECTS, seedTasks, STATUS_OPTIONS } from './data'
 import { formatChineseDate, formatMonth, shiftMonth, taskInMonth } from './utils/date'
 
-const STORAGE_KEY = 'rhythm-schedule-tasks-v1'
-const PROJECTS_STORAGE_KEY = 'rhythm-schedule-projects-v1'
+const STORAGE_KEY = TASKS_KEY
+const PROJECTS_STORAGE_KEY = PROJECTS_KEY
 const today = new Date()
 const initialMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
 
@@ -43,6 +45,7 @@ function App() {
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [confirmState, setConfirmState] = useState(null)
   const [showCompleted, setShowCompleted] = useState(false)
+  const [showBackup, setShowBackup] = useState(false)
 
   useEffect(() => window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)), [tasks])
   useEffect(() => window.localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects)), [projects])
@@ -93,9 +96,20 @@ function App() {
     if (confirmState.type === 'task') removeTask(confirmState.task)
     setConfirmState(null)
   }
+  const importBackup = (backup) => {
+    saveImportedBackup(window.localStorage, backup)
+    setProjects(backup.projects)
+    setTasks(backup.tasks)
+    setSelectedProject('all')
+    setStatusFilter('all')
+    setQuery('')
+    setModalTask(null)
+    setConfirmState(null)
+    setShowCompleted(false)
+  }
 
   return <div className="app-shell">
-    <Sidebar projects={projects} selectedProject={selectedProject} onSelectProject={setSelectedProject} taskCounts={taskCounts} onAddProject={() => setShowProjectModal(true)} onDeleteProject={requestDeleteProject} />
+    <Sidebar projects={projects} selectedProject={selectedProject} onSelectProject={setSelectedProject} taskCounts={taskCounts} onAddProject={() => setShowProjectModal(true)} onDeleteProject={requestDeleteProject} onOpenBackup={() => setShowBackup(true)} />
     <main className="main-content">
       <header className="topbar">
         <div className="breadcrumb"><span>工作台</span><Icon name="chevronRight" size={14} /><strong>排期总览</strong></div>
@@ -116,6 +130,7 @@ function App() {
     </main>
     {modalTask && <TaskModal task={modalTask.id ? modalTask : null} projects={projects} onClose={() => setModalTask(null)} onSave={saveTask} onDelete={requestDeleteTask} />}
     {showProjectModal && <ProjectModal onClose={() => setShowProjectModal(false)} onSave={saveProject} />}
+    {showBackup && <BackupModal projects={projects} tasks={tasks} onClose={() => setShowBackup(false)} onImport={importBackup} />}
     {confirmState && <ConfirmDialog title={confirmState.type === 'project' ? '确定删除这个项目吗？' : '确定删除这个需求吗？'} description={confirmState.type === 'project' ? (confirmState.projectTaskCount > 0 ? `删除“${confirmState.project.name}”后，里面的 ${confirmState.projectTaskCount} 个需求也会一起删除。` : `删除“${confirmState.project.name}”后，这个项目将无法恢复。`) : `删除“${confirmState.task.title}”后，这条需求将无法恢复。`} confirmLabel={confirmState.type === 'project' ? '删除项目' : '删除需求'} onClose={() => setConfirmState(null)} onConfirm={confirmDelete} />}
   </div>
 }

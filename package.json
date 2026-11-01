@@ -8,6 +8,7 @@
     "dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron src/electron.cjs --dev\"",
     "web": "vite",
     "build": "vite build",
+    "test": "node --test src/utils/*.test.js",
     "desktop": "npm run build && electron src/electron.cjs",
     "preview": "vite preview"
   },

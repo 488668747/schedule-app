@@ -1,7 +1,7 @@
 import React from 'react'
 import Icon from './Icon'
 
-export default function Sidebar({ projects, selectedProject, onSelectProject, taskCounts, onAddProject, onDeleteProject }) {
+export default function Sidebar({ projects, selectedProject, onSelectProject, taskCounts, onAddProject, onDeleteProject, onOpenBackup }) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -32,6 +32,7 @@ export default function Sidebar({ projects, selectedProject, onSelectProject, ta
       </div>
 
       <div className="sidebar-footer">
+        <button className="nav-item backup-entry" onClick={onOpenBackup}><Icon name="download" /><span>数据备份</span></button>
         <div className="tip-card"><div className="tip-icon"><Icon name="spark" size={15} /></div><div><strong>保持节奏</strong><p>把想法放进日程，专注当下。</p></div></div>
         <div className="profile"><div className="avatar">Y</div><div><strong>你自己</strong><span>前端开发</span></div><Icon name="more" size={17} className="profile-more" /></div>
       </div>
