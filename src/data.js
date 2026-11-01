@@ -1,9 +1,11 @@
-export const PROJECTS = [
+export const DEFAULT_PROJECTS = [
   { id: 'atlas', name: 'Atlas 设计系统', short: 'AT', color: '#5578e7' },
   { id: 'northstar', name: 'Northstar 官网', short: 'NS', color: '#e58a55' },
   { id: 'portal', name: '内部工作台', short: 'IW', color: '#7a68c5' },
   { id: 'personal', name: '个人事项', short: 'PS', color: '#39a590' }
 ]
+
+export const PROJECTS = DEFAULT_PROJECTS
 
 export const STATUS_OPTIONS = [
   { id: 'todo', label: '待开始', tone: 'neutral' },
@@ -42,8 +44,8 @@ export const seedTasks = [
   }
 ]
 
-export function getProject(projectId) {
-  return PROJECTS.find((project) => project.id === projectId) || PROJECTS[0]
+export function getProject(projectId, projects = PROJECTS) {
+  return projects.find((project) => project.id === projectId) || projects[0] || { id: '', name: '未分类项目', short: '?', color: '#aab2be' }
 }
 
 export function getStatus(statusId) {

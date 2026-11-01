@@ -1,7 +1,7 @@
 import React from 'react'
 import Icon from './Icon'
 
-export default function Sidebar({ projects, selectedProject, onSelectProject, taskCounts, onAddTask }) {
+export default function Sidebar({ projects, selectedProject, onSelectProject, taskCounts, onAddProject, onDeleteProject }) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -15,15 +15,18 @@ export default function Sidebar({ projects, selectedProject, onSelectProject, ta
       </nav>
 
       <div className="sidebar-section">
-        <div className="section-label"><span>我的项目</span><button className="icon-button tiny" onClick={onAddTask} aria-label="新增需求"><Icon name="plus" size={16} /></button></div>
+        <div className="section-label"><span>我的项目</span><button className="icon-button tiny" onClick={onAddProject} aria-label="新增项目"><Icon name="plus" size={16} /></button></div>
         <div className="project-list">
           <button className={`project-item ${selectedProject === 'all' ? 'selected' : ''}`} onClick={() => onSelectProject('all')}>
             <span className="project-dot all-dot"><Icon name="grid" size={13} /></span><span>全部需求</span><em>{taskCounts.all}</em>
           </button>
           {projects.map((project) => (
-            <button key={project.id} className={`project-item ${selectedProject === project.id ? 'selected' : ''}`} onClick={() => onSelectProject(project.id)}>
-              <span className="project-dot" style={{ background: project.color }}>{project.short.slice(0, 1)}</span><span>{project.name}</span><em>{taskCounts[project.id] || 0}</em>
-            </button>
+            <div key={project.id} className={`project-item ${selectedProject === project.id ? 'selected' : ''}`}>
+              <button className="project-select" onClick={() => onSelectProject(project.id)}>
+                <span className="project-dot" style={{ background: project.color }}>{project.short.slice(0, 1)}</span><span>{project.name}</span><em>{taskCounts[project.id] || 0}</em>
+              </button>
+              <button className="project-delete" onClick={() => onDeleteProject(project)} aria-label={`删除${project.name}`}><Icon name="trash" size={14} /></button>
+            </div>
           ))}
         </div>
       </div>

@@ -3,7 +3,7 @@ import Icon from './Icon'
 import { getProject, getStatus } from '../data'
 import { formatMonth, getMonthDays, taskInMonth, taskPosition } from '../utils/date'
 
-export default function Timeline({ tasks, month, onMonthChange, onEdit, onAddTask }) {
+export default function Timeline({ tasks, projects, month, onMonthChange, onEdit, onAddTask }) {
   const days = getMonthDays(month)
   const visibleTasks = tasks.filter((task) => taskInMonth(task, month))
   const today = new Date().toISOString().slice(0, 10)
@@ -22,7 +22,7 @@ export default function Timeline({ tasks, month, onMonthChange, onEdit, onAddTas
         <div className="day-header">{days.map((day) => <div key={day.date} className={`day-cell ${day.weekday === '周六' || day.weekday === '周日' ? 'weekend' : ''} ${day.date === today ? 'today' : ''}`}><span>{day.day}</span><small>{day.weekday.replace('周', '')}</small></div>)}</div>
         {visibleTasks.length === 0 && <div className="timeline-empty"><Icon name="calendar" size={20} /><span>这个月还没有安排，添加一个需求开始吧。</span><button className="text-button" onClick={onAddTask}>添加需求</button></div>}
         {visibleTasks.map((task) => {
-          const project = getProject(task.projectId)
+          const project = getProject(task.projectId, projects)
           const status = getStatus(task.status)
           const position = taskPosition(task, month)
           return <React.Fragment key={task.id}>

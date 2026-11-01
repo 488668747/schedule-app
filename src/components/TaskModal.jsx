@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import Icon from './Icon'
-import { PRIORITY_OPTIONS, PROJECTS, STATUS_OPTIONS } from '../data'
+import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '../data'
 
-const emptyTask = { title: '', projectId: PROJECTS[0].id, start: '', end: '', status: 'todo', priority: 'medium', note: '' }
+const makeEmptyTask = (projects) => ({ title: '', projectId: projects[0]?.id || '', start: '', end: '', status: 'todo', priority: 'medium', note: '' })
 
-export default function TaskModal({ task, onClose, onSave, onDelete }) {
-  const [form, setForm] = useState(task || emptyTask)
+export default function TaskModal({ task, projects, onClose, onSave, onDelete }) {
+  const [form, setForm] = useState(task || makeEmptyTask(projects))
   const isEditing = Boolean(task)
 
-  useEffect(() => setForm(task || emptyTask), [task])
+  useEffect(() => setForm(task || makeEmptyTask(projects)), [task, projects])
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }))
   const submit = (event) => {
@@ -23,7 +23,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete }) {
       <form onSubmit={submit}>
         <label className="field full"><span>需求名称</span><input autoFocus value={form.title} onChange={(event) => update('title', event.target.value)} placeholder="例如：优化登录页加载体验" required /></label>
         <div className="form-grid">
-          <label className="field"><span>所属项目</span><select value={form.projectId} onChange={(event) => update('projectId', event.target.value)}>{PROJECTS.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
+          <label className="field"><span>所属项目</span><select value={form.projectId} onChange={(event) => update('projectId', event.target.value)}>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
           <label className="field"><span>优先级</span><select value={form.priority} onChange={(event) => update('priority', event.target.value)}>{PRIORITY_OPTIONS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
         </div>
         <div className="form-grid">
