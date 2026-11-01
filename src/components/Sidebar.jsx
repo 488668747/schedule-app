@@ -17,7 +17,7 @@ export default function Sidebar({ projects, selectedProject, onSelectProject, ta
       <div className="sidebar-section">
         <div className="section-label"><span>我的项目</span><button className="icon-button tiny" onClick={onAddProject} aria-label="新增项目"><Icon name="plus" size={16} /></button></div>
         <div className="project-list">
-          <button className={`project-item ${selectedProject === 'all' ? 'selected' : ''}`} onClick={() => onSelectProject('all')}>
+          <button className={`project-item project-item-all ${selectedProject === 'all' ? 'selected' : ''}`} onClick={() => onSelectProject('all')}>
             <span className="project-dot all-dot"><Icon name="grid" size={13} /></span><span>全部需求</span><em>{taskCounts.all}</em>
           </button>
           {projects.map((project) => (
