@@ -3,6 +3,9 @@ const path = require('node:path')
 
 const isDev = process.argv.includes('--dev')
 
+// Keep this directory stable when the app name or installation location changes.
+app.setPath('userData', app.commandLine.getSwitchValue('user-data-dir') || path.join(app.getPath('appData'), 'xu-qiu-pai-qi-app'))
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1440,

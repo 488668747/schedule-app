@@ -2,6 +2,7 @@
   "name": "xu-qiu-pai-qi-app",
   "version": "0.1.0",
   "description": "跨平台个人需求排期桌面应用",
+  "author": "488668747",
   "main": "src/electron.cjs",
   "type": "module",
   "scripts": {
@@ -10,21 +11,71 @@
     "build": "vite build",
     "test": "node --test src/utils/*.test.js",
     "desktop": "npm run build && electron src/electron.cjs",
+    "dist:mac": "npm run build && electron-builder --mac dmg --publish never",
+    "icons:mac": "swift scripts/generate-icon.swift && iconutil -c icns build/Rhythm.iconset -o build/icon.icns",
     "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.dayouzi.schedule-app",
+    "productName": "节奏",
+    "artifactName": "Rhythm-${version}-mac-${arch}.${ext}",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "src/electron.cjs",
+      "src/preload.cjs",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "asar": true,
+    "afterPack": "scripts/sign-mac.cjs",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "identity": null,
+      "hardenedRuntime": false,
+      "target": [
+        "dmg"
+      ]
+    },
+    "dmg": {
+      "title": "节奏 ${version}",
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 140,
+          "y": 180,
+          "type": "file"
+        },
+        {
+          "x": 400,
+          "y": 180,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
   },
   "dependencies": {
     "@tiptap/extension-image": "^3.32.2",
     "@tiptap/react": "^3.32.2",
     "@tiptap/starter-kit": "^3.32.2",
-    "@vitejs/plugin-react": "latest",
-    "electron": "33.4.11",
     "react": "latest",
-    "react-dom": "latest",
-    "vite": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
     "concurrently": "8.2.2",
+    "electron-builder": "^26.0.12",
     "fake-indexeddb": "^6.2.7",
-    "wait-on": "7.2.0"
+    "wait-on": "7.2.0",
+    "electron": "33.4.11",
+    "vite": "latest",
+    "@vitejs/plugin-react": "latest"
   }
 }

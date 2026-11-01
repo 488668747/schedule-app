@@ -54,4 +54,16 @@ npm run dev
 
 `npm test` 验证图文备份还原、旧版兼容、文档校验、本地数据迁移和保存失败时的数据保留。
 
-后续如果要生成安装包，可以继续接入 `electron-builder`，分别构建 `.dmg` 和 Windows 安装程序。
+## Mac 安装包
+
+```bash
+npm run dist:mac
+```
+
+在 Mac 上生成与本机芯片对应的 DMG，产物在 `release/Rhythm-0.1.0-mac-arm64.dmg`（Apple 芯片）或 `release/Rhythm-0.1.0-mac-x64.dmg`（Intel）。双击 DMG，把“节奏”拖到 Applications 文件夹即可安装。应用图标已随工程提供；需要重新生成时可在 Mac 上运行 `npm run icons:mac`。
+
+当前安装包使用本地临时签名，未做 Apple 开发者签名和公证。如首次打开被系统拦截，请在“系统设置 → 隐私与安全性”中选择“仍要打开”。
+
+安装版固定使用 `com.dayouzi.schedule-app` 应用标识和 `xu-qiu-pai-qi-app` 用户数据目录，后续版本可在退出应用后覆盖替换 `.app`，正常覆盖不会删除该目录里的数据。浏览器或早期开发版的数据需要先导出备份，再到安装版导入；首次安装不会自动读取浏览器的数据。当前版本需手动安装更新。
+
+安装包不提交到 Git，打包配置和图标源码会同步到仓库。当前仅配置 Mac DMG，Windows 安装包可后续补充。
