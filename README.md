@@ -56,6 +56,8 @@ npm run dev
 
 ## Mac 安装包
 
+已发布的安装包在 [GitHub Releases](https://github.com/488668747/schedule-app/releases) 下载：打开版本页面，展开 **Assets**，选择 `mac-arm64.dmg`。
+
 ```bash
 npm run dist:mac
 ```
@@ -67,3 +69,16 @@ npm run dist:mac
 安装版固定使用 `com.dayouzi.schedule-app` 应用标识和 `xu-qiu-pai-qi-app` 用户数据目录，后续版本可在退出应用后覆盖替换 `.app`，正常覆盖不会删除该目录里的数据。浏览器或早期开发版的数据需要先导出备份，再到安装版导入；首次安装不会自动读取浏览器的数据。当前版本需手动安装更新。
 
 安装包不提交到 Git，打包配置和图标源码会同步到仓库。当前仅配置 Mac DMG，Windows 安装包可后续补充。
+
+## 发布新版本到 GitHub
+
+手动发布：在仓库右侧点击 **Releases → Create a new release**，选择或创建与 `package.json` 版本一致的标签（例如 `v0.1.0`），填写中文标题和版本说明，将本地生成的 DMG 拖到附件区，上传完成后点击 **Publish release**。发布后从该版本的 **Assets** 下载。
+
+也可使用本仓库的自动发布流程：更新 `package.json` 和锁文件中的版本号，提交并推送代码，然后创建并推送对应标签：
+
+```bash
+git tag -a v0.1.0 -m "发布 v0.1.0 Mac 安装版"
+git push origin v0.1.0
+```
+
+GitHub **Actions → 发布 Mac 安装包** 会运行测试、构建 Apple 芯片 DMG、检查签名和校验和，再把安装包上传至 Releases。发布说明使用 `docs/releases/mac.md`。以后发布前请修改版本号和说明，并创建一个新的标签；已有版本标签不要移动。若版本存在问题，可在 Releases 编辑页面撤销最新标记或删除该发布，修复后用新的补丁版本重新发布。

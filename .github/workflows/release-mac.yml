@@ -1,0 +1,63 @@
+name: 发布 Mac 安装包
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: 构建并发布 Apple 芯片 Mac 安装包
+    runs-on: macos-15
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: 读取版本代码
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: 准备 Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: 检查版本标签
+        run: |
+          node -e 'const p = require("./package.json"); if (!/^v\d+\.\d+\.\d+$/.test(process.env.GITHUB_REF_NAME) || process.env.GITHUB_REF_NAME !== "v" + p.version) throw new Error("版本标签必须与 package.json 中的版本一致")'
+          test "$(uname -m)" = arm64
+
+      - name: 安装依赖并验证功能
+        run: |
+          npm ci --registry https://registry.npmjs.org
+          npm test
+
+      - name: 生成 Mac 安装包
+        run: npm run dist:mac -- --arm64
+
+      - name: 校验安装包
+        run: |
+          codesign --verify --deep --strict "release/mac-arm64/节奏.app"
+          hdiutil verify release/*.dmg
+          cd release
+          shasum -a 256 *.dmg > SHA256SUMS.txt
+
+      - name: 发布到 Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "节奏 $RELEASE_TAG · Mac 安装版" --notes-file docs/releases/mac.md
+          fi
+          gh release upload "$RELEASE_TAG" release/*.dmg release/SHA256SUMS.txt --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --latest
