@@ -14,6 +14,11 @@ export function formatChineseDate(value) {
   return `${date.getMonth() + 1}月${date.getDate()}日`
 }
 
+export function formatFullChineseDate(value) {
+  const date = parseDate(value)
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
+}
+
 export function formatMonth(monthValue) {
   const [year, month] = monthValue.split('-')
   return `${year}年${Number(month)}月`

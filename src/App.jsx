@@ -9,18 +9,17 @@ import ConfirmDialog from './components/ConfirmDialog'
 import BackupModal from './components/BackupModal'
 import TaskDetails from './components/TaskDetails'
 import useScheduleData from './useScheduleData'
+import useToday from './useToday'
 import { getPriority, getProject, getStatus, STATUS_OPTIONS } from './data'
-import { formatChineseDate, formatMonth, shiftMonth, taskInMonth } from './utils/date'
-
-const today = new Date()
-const initialMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+import { formatChineseDate, formatFullChineseDate, formatMonth, shiftMonth, taskInMonth } from './utils/date'
 
 function App() {
+  const today = useToday()
   const { tasks, projects, ready, loading, error, saving, updateData } = useScheduleData()
   const [selectedProject, setSelectedProject] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [query, setQuery] = useState('')
-  const [month, setMonth] = useState(initialMonth)
+  const [month, setMonth] = useState(() => today.slice(0, 7))
   const [modalTask, setModalTask] = useState(null)
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [confirmState, setConfirmState] = useState(null)
@@ -35,12 +34,12 @@ function App() {
     return matchesProject && matchesStatus && matchesQuery
   }), [tasks, projects, selectedProject, statusFilter, query])
 
-  const monthTasks = tasks.filter((task) => taskInMonth(task, month))
+  const monthTasks = filteredTasks.filter((task) => taskInMonth(task, month))
   const taskCounts = useMemo(() => projects.reduce((result, project) => ({ ...result, [project.id]: tasks.filter((task) => task.projectId === project.id).length }), { all: tasks.length }), [tasks, projects])
   const stats = {
     total: monthTasks.length,
     progress: monthTasks.filter((task) => task.status === 'progress').length,
-    upcoming: monthTasks.filter((task) => task.status !== 'done' && task.end >= new Date().toISOString().slice(0, 10)).length,
+    upcoming: monthTasks.filter((task) => task.status !== 'done' && task.end >= today).length,
     done: monthTasks.filter((task) => task.status === 'done').length
   }
   const listTasks = filteredTasks.filter((task) => showCompleted || task.status !== 'done').sort((a, b) => a.end.localeCompare(b.end))
@@ -96,18 +95,20 @@ function App() {
         <div className="topbar-actions"><label className="search-box"><Icon name="search" size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索需求或项目" aria-label="搜索需求或项目" /></label><button className="icon-button notification" aria-label="通知"><Icon name="bell" size={18} /><i></i></button><div className="top-avatar">Y</div></div>
       </header>
 
-      <div className="content-wrap">
-        {error && <p className="storage-error" role="alert">{error}</p>}
-        <section className="page-intro"><div><p className="eyebrow">SATURDAY, OCTOBER 31, 2026</p><h1>今天也保持好节奏<span>。</span></h1><p className="intro-copy">把每一件要做的事放进清晰的时间里，专注正在发生的事。</p></div><button className="primary-button hero-button" onClick={() => setModalTask({})}><Icon name="plus" size={17} />新建需求</button></section>
-        <Stats stats={stats} />
-        <Timeline tasks={monthTasks} projects={projects} month={month} onMonthChange={(offset) => setMonth((current) => shiftMonth(current, offset))} onEdit={setViewTask} onAddTask={() => setModalTask({})} />
+      <div className="workspace-scroll" role="region" aria-label="排期工作区" tabIndex={0}>
+        <div className="content-wrap">
+          {error && <p className="storage-error" role="alert">{error}</p>}
+          <section className="page-intro"><div><p className="eyebrow current-date"><time dateTime={today}>{formatFullChineseDate(today)}</time></p><h1>今天也保持好节奏</h1><p className="intro-copy">把每一件要做的事放进清晰的时间里，专注正在发生的事。</p></div><button className="primary-button hero-button" onClick={() => setModalTask({})}><Icon name="plus" size={17} />新建需求</button></section>
+          <Stats stats={stats} />
+          <Timeline tasks={monthTasks} projects={projects} month={month} today={today} onMonthChange={(offset) => setMonth((current) => shiftMonth(current, offset))} onEdit={setViewTask} onAddTask={() => setModalTask({})} />
 
-        <section className="task-section">
-          <div className="section-heading"><div><p className="eyebrow">TASK INBOX</p><h2>需求清单 <span>{filteredTasks.length}</span></h2></div><div className="filter-actions"><div className="filter-tabs" role="tablist" aria-label="状态筛选"><button className={statusFilter === 'all' ? 'active' : ''} onClick={() => setStatusFilter('all')}>全部</button>{STATUS_OPTIONS.slice(0, 3).map((status) => <button key={status.id} className={statusFilter === status.id ? 'active' : ''} onClick={() => setStatusFilter(status.id)}>{status.label}</button>)}</div><button className={`filter-toggle ${showCompleted ? 'active' : ''}`} onClick={() => setShowCompleted((value) => !value)}><Icon name="check" size={14} />显示已完成</button></div></div>
-          <div className="task-list">{listTasks.length === 0 ? <div className="empty-list"><div className="empty-icon"><Icon name="search" size={20} /></div><strong>没有找到匹配的需求</strong><p>试试调整筛选条件，或者创建一个新的需求。</p><button className="text-button" onClick={() => { setQuery(''); setStatusFilter('all'); setSelectedProject('all') }}>清除筛选</button></div> : listTasks.map((task) => <TaskRow key={task.id} task={task} projects={projects} saving={saving} onView={() => setViewTask(task)} onEdit={() => setModalTask(task)} onStatusChange={(status) => updateStatus(task, status)} />)}</div>
-        </section>
-        <footer className="footer-note"><span role="status">{saving ? '正在保存…' : '已保存到本地 · 数据只保存在这台设备'}</span><span>当前视图：{formatMonth(month)}</span></footer>
+          <section className="task-section">
+            <div className="section-heading"><div><p className="eyebrow">TASK INBOX</p><h2>需求清单 <span>{filteredTasks.length}</span></h2></div><div className="filter-actions"><div className="filter-tabs" role="tablist" aria-label="状态筛选"><button className={statusFilter === 'all' ? 'active' : ''} onClick={() => setStatusFilter('all')}>全部</button>{STATUS_OPTIONS.slice(0, 3).map((status) => <button key={status.id} className={statusFilter === status.id ? 'active' : ''} onClick={() => setStatusFilter(status.id)}>{status.label}</button>)}</div><button className={`filter-toggle ${showCompleted ? 'active' : ''}`} onClick={() => setShowCompleted((value) => !value)}><Icon name="check" size={14} />显示已完成</button></div></div>
+            <div className="task-list">{listTasks.length === 0 ? <div className="empty-list"><div className="empty-icon"><Icon name="search" size={20} /></div><strong>没有找到匹配的需求</strong><p>试试调整筛选条件，或者创建一个新的需求。</p><button className="text-button" onClick={() => { setQuery(''); setStatusFilter('all'); setSelectedProject('all') }}>清除筛选</button></div> : listTasks.map((task) => <TaskRow key={task.id} task={task} projects={projects} saving={saving} onView={() => setViewTask(task)} onEdit={() => setModalTask(task)} onStatusChange={(status) => updateStatus(task, status)} />)}</div>
+          </section>
+        </div>
       </div>
+      <footer className="footer-note"><span role="status">{saving ? '正在保存…' : '已保存到本地 · 数据只保存在这台设备'}</span><span>当前视图：{formatMonth(month)}</span></footer>
     </main>
     {modalTask && <TaskModal task={modalTask.id ? modalTask : null} projects={projects} saving={saving} onClose={() => setModalTask(null)} onSave={saveTask} onDelete={requestDeleteTask} />}
     {viewTask && <TaskDetails task={viewTask} projects={projects} onClose={() => setViewTask(null)} onEdit={() => { setModalTask(viewTask); setViewTask(null) }} />}

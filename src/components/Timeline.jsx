@@ -3,10 +3,9 @@ import Icon from './Icon'
 import { getProject, getStatus } from '../data'
 import { formatMonth, getMonthDays, taskInMonth, taskPosition } from '../utils/date'
 
-export default function Timeline({ tasks, projects, month, onMonthChange, onEdit, onAddTask }) {
+export default function Timeline({ tasks, projects, month, today, onMonthChange, onEdit, onAddTask }) {
   const days = getMonthDays(month)
   const visibleTasks = tasks.filter((task) => taskInMonth(task, month))
-  const today = new Date().toISOString().slice(0, 10)
 
   return <section className="timeline-card">
     <div className="timeline-heading">
